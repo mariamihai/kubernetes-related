@@ -120,6 +120,8 @@ kubectl delete -f [file-name.yaml]
 
 ```bash
 kubectl get all
+kubectl get all | grep [name]
+
 kubectl get nodes
 
 kubectl get pod
@@ -173,7 +175,7 @@ echo -n 'secret' | base64
 </details>
 
 <details>
-    <summary>Add the values to the mongodeb-secret.yaml file</summary>
+    <summary>Add the values to the mongodb-secret.yaml file</summary>
 
 ```yaml
 apiVersion: v1
@@ -191,7 +193,7 @@ data:
 ### Create deployment for mongodb
 
 <details>
-    <summary>Reference the secret saved in mongodb-secret.yaml file</summary>
+    <summary>Reference the secret saved in the mongodb-secret.yaml file in the deployment configuration file</summary>
 
 ```yaml
 apiVersion: apps/v1
