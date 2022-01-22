@@ -13,6 +13,7 @@ Following along with [Kubernetes Tutorial](https://www.youtube.com/watch?v=X48Vu
     - [Create / delete via configuration file](#create--delete-via-configuration-file)
     - [Status](#status)
     - [Debugging pods](#debugging-pods)
+    - [Working with namespaces](#working-with-namespaces)
   - [Demo project](#demo-project)
     - [Using secrets](#using-secrets)
     - [Create deployment and service for MongoDB](#create-deployment-and-service-for-mongodb)
@@ -131,16 +132,22 @@ kubectl delete -f [file-name.yaml]
 ```bash
 kubectl get all
 kubectl get all | grep [name]
+kubectl get all -n [namespace]
 
 kubectl get nodes
+
+kubectl get namespaces
 
 kubectl get pod
 # Get more information about the mod
 kubectl get pod -o wide
 # Watch for changes
 kubectl get pod --watch
+# Get in yaml format
+kubectl get pod -o yaml
 
 kubectl get service
+
 kubectl get replicaset
 
 kubectl get deployment
@@ -167,6 +174,133 @@ lubectl exec -it [pod-name] -- bin/bash
 kubectl describe pod [pod-name]
 kubectl describe service [service-name]
 ```
+
+</details>
+
+</br>
+
+### Working with namespaces
+
+<details>
+    <summary>Get cluster info from the kube-public namespace</summary>
+
+```bash
+kubectl cluster-info
+```
+
+</details>
+
+<details>
+    <summary>Create namespace</summary>
+
+```bash
+kubectl create namespace [namespace]
+```
+
+Can create via configuration file as well (preffered):
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongo-configmap
+  namespace: mongo-namespace
+type: Opaque
+data:
+  database_url: mongo-service
+```
+
+</details>
+
+<details>
+    <summary>Check resources that are or not bound to a namespace</summary>
+
+```bash
+kubectl api-resources --namespaced=true
+
+kubectl api-resources --namespaced=false
+```
+
+</details>
+
+<details>
+    <summary>Create resources in a specific namespace</summary>
+
+```bash
+kubectl apply -f file-name.yaml --namespace=[namespace]
+```
+
+Or via configuration file:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongo-configmap
+  # Define resource in namespace
+  namespace: mongo-namespace
+type: Opaque
+data:
+  database_url: mongo-service
+```
+
+</details>
+
+<details>
+    <summary>Get resources from a namespace</summary>
+
+```bash
+# If not specified then it returns the resources from the default namspace
+kubectl get deployment [--namespace=default]
+
+kubectl get deployment --namespace=[namespace]
+kubectl get configmap --namespace=[namespace]
+```
+
+</details>
+
+<details>
+    <summary>Change active namespace with kubens</summary>
+
+```bash
+# Windows
+choco install kubens
+
+# Show existing namespaces and highlight the active one
+kubens
+
+# Sets this as the active namespace
+kubens [different-namespace]
+
+# Switch back to previous namespace
+kubens -
+```
+
+Can have an [interactive mode](https://github.com/ahmetb/kubectx/#interactive-mode).
+
+</details>
+
+<details>
+    <summary>Change contexts with kubectx</summary>
+
+```bash
+# Windows
+choco install kubectx
+
+# Show existing clusters and highlight the active one
+kubectx
+
+# Sets this as the active cluster
+kubectx [different-cluster]
+
+# Switch back to previous cluster
+kubectx -
+
+# Create an alias for the context
+$ kubectx context=context_alias
+```
+
+Can have an [interactive mode](https://github.com/ahmetb/kubectx/#interactive-mode).
 
 </details>
 
@@ -281,7 +415,7 @@ data:
 </details>
 <br/>
 
-### Create deployment and service for Mongo Express
+### Create deployment and service for [Mongo Express](https://hub.docker.com/_/mongo-express)
 
 <details>
     <summary>Reference the secret saved in the mongo-secret.yaml file and the variable from configMap .yaml file in the deployment configuration file of Mongo Express</summary>
@@ -360,3 +494,4 @@ minikube service mongo-express-service
 ```
   
 </details>
+
