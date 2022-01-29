@@ -580,9 +580,44 @@ The address and host needs to be set in `C:\Windows\System32\drivers\etc\hosts` 
 
 </details>
 
+
+<details>
+  <summary>TLS</summary>
+
+Need to create a secret for the certificate:
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: myapp-secret-tls
+  namespace: default
+data:
+  tls.crt: based64 encoded cert
+  tls.key: based64 encoded key
+type: kubernetes.io/tls
+```
+
+And tie it to the Ingress yaml file:
+```yaml
+#...
+spec:
+  tls:
+  - hosts:
+    - myapp.com
+    secretName: myapp-secret-tls
+#...
+```
+
+The data keys must be `tls.crt` and `tls.key`.
+
+The values are the file contents and NOT the file path or locations.
+
+The secret component must be in the same namespace as the Ingress component as you can’t reference a secret in another namespace.
+
+</details>
+
 <details>
   <summary>Links</summary>
-
 
 https://kubernetes.github.io/ingress-nginx/deploy/#checking-ingress-controller-version
 
@@ -593,3 +628,79 @@ https://stackoverflow.com/questions/70287043/run-ingress-in-minikube-and-its-add
 https://minikube.sigs.k8s.io/docs/handbook/addons/ingress-dns/
 
 </details>
+
+---
+
+## Helm
+
+Information added based on the official [quickstart guide](https://helm.sh/docs/intro/quickstart/).
+
+<details>
+  <summary>Install helm (v 3+ currently)</summary>
+
+```bash
+choco install kubernetes-helm
+```
+
+```bash
+helm get -h
+```
+
+</details>
+
+
+<details>
+  <summary>Helm chart repository</summary>
+
+Available Helm chart repositories in [Artifact Hub](https://artifacthub.io/packages/search?kind=0).
+
+```bash
+# Initializing a Helm chart repository
+helm repo add bitnami https://charts.bitnami.com/bitnami
+
+# List the charts that can be installed
+helm search repo bitnami
+```
+
+</details>
+
+<details>
+  <summary>Using charts</summary>
+
+```bash
+# Get the latest list of charts
+helm repo update
+
+# Install a chart
+helm install bitnami/mysql --generate-name
+help install my-release bitnami/mysql
+
+# Wait for the pod
+kubectl get pods --namespace default -w
+
+# Get more info
+helm show chart bitnami/mysql
+helm show all bitnami/mysql
+```
+
+</details>
+
+<details>
+  <summary>Releases</summary>
+
+```bash
+helm list
+heml ls
+
+# Need --keep-history flag for release history to be kept after uninstall
+helm status my-release
+
+heml uninstall mysql-xxxxxx
+heml uninstall my-release
+
+helm rollback my-release
+```
+
+</details>
+
+---
