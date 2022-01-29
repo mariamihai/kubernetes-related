@@ -492,6 +492,104 @@ spec:
 ```bash
 minikube service mongo-express-service
 ```
-  
+
 </details>
 
+---
+
+## Ingress
+
+Example of using Ingress rules with dashboard.
+
+There is a `kubernetes-dashboard` namespace specific to minikube use.
+
+<details>
+  <summary>Enable addons</summary>
+
+```bash
+minikube addons enable dashboard
+minikube addons enable metrics-server
+minikube addons list
+```
+
+Check the new namespace by running `kubectl get ns`.
+
+</details>
+
+<details>
+  <summary>Get the dashboard in browser</summary>
+
+```
+minikube dashboard
+minikube dashboard –url
+```
+
+</details>
+
+<details>
+  <summary>Install ingress controller in minikube</summary>
+
+Using `K8s Nginx implementation of Ingress Controller`:
+
+```bash 
+minikube addons enable ingress
+```
+
+Check for `nginx-ingress-controller` pod:
+
+```bash 
+kubectl get pod -n ingress-nginx
+```
+
+Will need `minikube tunnel` to connect to LoadBalancer services.
+
+</details>
+
+<details>
+  <summary>Configure an ingress rule for the dashboard</summary>
+
+`ingress.yaml` file:
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dashboard-ingress
+  namespace: kubernetes-dashboard
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: dashboard.com
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: kubernetes-dashboard
+              port:
+                number: 80
+```
+
+```bash 
+kubectl apply -f ingress.yaml
+kubectl get ingress -n kubernetes-dashboard
+```
+
+The address and host needs to be set in `C:\Windows\System32\drivers\etc\hosts` (for Windows).
+
+</details>
+
+<details>
+  <summary>Links</summary>
+
+
+https://kubernetes.github.io/ingress-nginx/deploy/#checking-ingress-controller-version
+
+https://docs.nginx.com/nginx-ingress-controller/intro/how-nginx-ingress-controller-works/
+
+https://stackoverflow.com/questions/70287043/run-ingress-in-minikube-and-its-address-shows-localhost
+
+https://minikube.sigs.k8s.io/docs/handbook/addons/ingress-dns/
+
+</details>
