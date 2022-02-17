@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongo-configmap
+  # Can create a new namespace
+  # namespace: mongo-namespace
+data:
+  database_url: mongo-service
