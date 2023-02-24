@@ -100,6 +100,224 @@ minikube service [service-name]
 
 ## `kubectl` commands
 
+kubectl [overview](https://kubernetes.io/docs/reference/kubectl/), 
+[cheat sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/),
+[conventions](https://kubernetes.io/docs/reference/kubectl/conventions/)
+
+```bash
+kubectl explain pod
+```
+
+### Grouped commands
+
+<details>
+    <summary>POD, ReplicaseSet, Deployment</summary>
+    
+#### POD related
+
+Definition yaml file:
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+	name: myapp-pod
+	labels:
+		app: myapp
+		type: frontend
+spec:
+containers:
+          - name: nginx-container
+	image: nginx
+```
+
+```bash
+kubectl create -f pod-definition.yaml
+kubectl create -f pod-definition.yaml --dry-run=client [-o json / yaml / name]
+kubectl run nginx --image=nginx [--restart=Never] 
+
+kubectl get pods
+
+kubectl describe pod myapp-pod
+
+kubectl delete pod myapp-pod
+kubectl delete pod p1 p2 p3 ...
+
+kubectl get pod myapp-pod -o yaml > pod-definition.yaml
+```
+
+#### ReplicaSet related
+
+Use `replicaset` or `rs`.
+
+Definition yaml file:
+```yaml
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: myapp-replicaset
+  labels:
+    app: myapp
+    type: frontend
+spec:
+  template:
+    # Pod definition here:
+    metadata:
+      name: myapp-pod
+      labels:
+        app: myapp
+        type: frontend
+    spec:
+      containers:
+        - name: nginx-container
+          image: nginx
+  replicas: 2
+  # Difference between RC and RS - selected is required
+  selector:
+    matchLabels:
+      type: frontend
+```
+
+```bash
+kubectl create -f replicaset-definition.yaml
+kubectl create -f replicaset-definition.yaml --dry-run=client [-o json / yaml / name]
+kubectl delete -f replicaset-definition.yaml
+
+kubectl get replicationset
+
+kubectl describe replicaset myapp-replicas
+kubectl delete replicaset myapp-replicas
+kubectl delete replicaset rs1 rs2 rs3 ...
+
+kubectl get replicaset myapp-replicas -o yaml > replicaset-definition.yaml
+
+# Change the number of replicas - pods are created or deleted automatically
+kubectl replace -f replicaset-definition.yaml
+kubectl scale --replicas=6 -f replicaset-definition.yaml
+kubectl scale --replicas=6 replicaset myapp-replicas
+
+# Either delete and recreate the replicaset or delete the pods (if changing the image for example):
+kubectl edit replicaset myapp-replicas
+
+```
+
+#### Deployment related
+
+Definition yaml file:
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+	name: myapp-deployment
+	labels:
+		app: myapp
+		type: frontend
+spec:
+	template:
+		# Pod definition here:
+	    metadata:
+	        name: myapp-pod
+	        labels:
+		        app: myapp
+		        type: frontend
+        spec:
+            containers:
+                - name: nginx-container
+	            image: nginx
+	replicas: 3
+	# Difference between RC and RS - selected is required
+	selector:
+		matchLabels:
+			type: frontend
+```
+
+```bash
+kubectl create -f deployment-definition.yml
+kubectl create -f deployment-definition.yaml --dry-run=client [-o json / yaml / name]
+kubectl create deployment httpd-frontend --image=httpd:2.4-alpine --replicas=3
+
+kubectl get deployments
+
+kubectl get all
+```
+
+#### Namespace related
+
+Use `namespaces` or `ns`.
+
+Definition yaml file:
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+	name: dev
+```
+
+```bash
+kubectl get namespaces
+kubectl get pods  --namespace=kybe-system
+
+
+kubectl create -f namespace-definition.yml
+Kubectl create namespace dev
+
+
+kubectl create -f pod-definition.yml --namespace=dev
+# or create the pod definition with namespace metadata
+```
+
+##### Switch to another namespace permanently
+
+```bash
+kubectl config set-context $(kubectl config current-context) --namespace=dev
+#kubectl get pods --namespace=default
+
+kubectl get pods --all-namespaces
+kubectl get pods -A
+
+ kubectl get all --namespace=kube-system
+ kubectl get all -n=kube-system
+```
+
+##### Limit resources in a namespace
+
+Definition yaml file:
+```yaml
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+	name: compute-quota
+	namspeace: dev
+spec:
+	hard:
+		pods: “10”
+		requests.cpu: “4”
+		requests.memory: 5Gi
+		limits.cpu: “10”
+		limits.memory: 10Gi
+```
+
+```bash
+kubectl create -f compute-quota.yml
+```
+
+#### Service
+
+```bash
+kubectl expose pod redis --port=6379 --name redis-service --dry-run=client -o yaml
+# (This will automatically use the pod's labels as selectors)
+
+kubectl create service clusterip redis --tcp=6379:6379 --dry-run=client -o yaml 
+#(This will not use the pods labels as selector)
+
+kubectl expose pod nginx --port=80 --name nginx-service --type=NodePort --dry-run=client -o yaml
+# (This will automatically use the pod's labels as selectors)
+
+kubectl create service nodeport nginx --tcp=80:80 --node-port=30080 --dry-run=client -o yaml
+# (This will not use the pods labels as selectors)
+```
+
+</details>
+
 ### CRUD commands
 
 <details>
@@ -116,13 +334,40 @@ kubectl delete deployment [deployment-name]
 
 </details>
 
+### Create from terminal
+
+```bash
+# Create pod with image name
+kubectl run nginx --image=nginx
+
+kubectl run nginx --image=nginx --dry-run=clien -o yaml
+```
+
+### Edit pods
+
+Either edit the pod definition.
+
+Or get the pod definition, delete and recreate the pod:
+```bash
+kubectl get pod <pod-name> -o yaml > pod-definition.yaml
+```
+
+Or edit the pod's properties with
+```bash
+kubectl edit pod <pod-name>
+```
+
 ### Create / delete via configuration file
 
 <details>
     <summary>commands</summary>
 
 ```bash
+kubectl create -f [file-name.yaml]
+
 kubectl apply -f [file-name.yaml]
+
+kubectl replace -f [file-name.yaml]
 
 kubectl delete -f [file-name.yaml]
 ```
