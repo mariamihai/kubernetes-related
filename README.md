@@ -134,6 +134,12 @@ containers:
 kubectl create -f pod-definition.yaml
 kubectl create -f pod-definition.yaml --dry-run=client [-o json / yaml / name]
 kubectl run nginx --image=nginx [--restart=Never] 
+kubectl run custom-nginx --image=nginx --port=8080
+kubectl run redis --image=redis:alpine --dry-run=client --labels="tier=db" -o yaml > redis-pod.yaml
+kubectl run webapp-green –image=kodekloud/webapp-color -- –color=green 
+
+# Create pod and a service of type ClusterIp with the same name with target port for the service=80
+kubectl run httpd --image=httpd:alpine --port=80 --expose
 
 kubectl get pods
 
@@ -143,6 +149,9 @@ kubectl delete pod myapp-pod
 kubectl delete pod p1 p2 p3 ...
 
 kubectl get pod myapp-pod -o yaml > pod-definition.yaml
+
+# Get environment variables on a POD
+kubectl exec webapp-color env
 ```
 
 #### ReplicaSet related
@@ -300,9 +309,10 @@ spec:
 kubectl create -f compute-quota.yml
 ```
 
-#### Service
+#### Service related
 
 ```bash
+## Create a service redis-service to expose the redis application within the cluster on port 6379
 kubectl expose pod redis --port=6379 --name redis-service --dry-run=client -o yaml
 # (This will automatically use the pod's labels as selectors)
 
@@ -315,6 +325,100 @@ kubectl expose pod nginx --port=80 --name nginx-service --type=NodePort --dry-ru
 kubectl create service nodeport nginx --tcp=80:80 --node-port=30080 --dry-run=client -o yaml
 # (This will not use the pods labels as selectors)
 ```
+
+#### ConfigMap related
+
+pod-definition.yaml:
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+	name: simple-webapp-color
+specs:
+    containers:
+	- name: simple-webapp-color
+	  image: simple-webapp-color
+	  ports:
+	     - containerPort: 8080
+	# Env vars with CONFIGMAPS
+	  env:
+	     - name: APP_COLOR
+	       valueFrom: 
+		configMapKeyRef:
+```
+
+Create a ConfigMap - imperative way:
+```bash
+kubectl create configmap \
+	app-config --from-literal=APP_COLOR=blue \
+		   --from-literal=APP_MOD=prod
+
+
+kubectl create configmap \
+	app-config --from-file=app_config.properties
+```
+
+Create a ConfigMap - declarative way via a definition file:
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+	name: app-config
+data:
+	APP_COLOR: blue
+	APP_MOD: prod
+```
+
+```bash
+kubectl get configmaps
+kubectl get cm
+```
+
+#### Secrets related
+
+##### Create secrets
+
+Imperative way: 
+```
+kubectl create secret generic \
+	<secret-name> --from-literal=<key>=<value>
+
+kubectl create secret generic \
+	<secret-name> --from-file=<path-to-file>
+```
+
+Declarative way: 
+```
+kubectl create -f secret-data.yaml
+```
+
+Create a Secret - declarative way via a definition file:
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+	name: app-secret
+data:
+	key: <encoded-value>
+```
+
+Encode the data with `echo -n ‘value-to-be-encoded’ | base64`.
+
+Decode it with `echo -n ‘encoded-value’ | base64 –-decode`.
+
+
+```
+kubectl get secrets
+
+# Show the attributes in the secrets but hide the values:
+kubectl describe secrets
+
+# Get the values (encoded):
+kubectl get secret app-secret -o yaml
+
+```
+
+
 
 </details>
 
@@ -330,6 +434,9 @@ kubectl create deployment [deployment-name] --image=[image-name] [--dry-run] [op
 kubectl edit deployment [deployment-name]
 
 kubectl delete deployment [deployment-name]
+
+# all = delete all resource types; -all=delete every object of that resource type 
+kubectl delete all --all
 ```
 
 </details>
@@ -366,6 +473,8 @@ kubectl edit pod <pod-name>
 kubectl create -f [file-name.yaml]
 
 kubectl apply -f [file-name.yaml]
+
+kubectl create <something> --dry-run=client -o yaml | kubectl apply -f -
 
 kubectl replace -f [file-name.yaml]
 
@@ -420,7 +529,7 @@ kubectl get secret
 
 ```bash
 kubectl logs [pod-name]
-lubectl exec -it [pod-name] -- bin/bash
+kubectl exec -it [pod-name] -- bin/bash
 
 kubectl describe pod [pod-name]
 kubectl describe service [service-name]
@@ -955,3 +1064,16 @@ helm rollback my-release
 </details>
 
 ---
+
+## Links
+
+- https://github.com/dgkanatsios/CKAD-exercises/
+- https://medium.com/@wely.lau/learning-materials-and-8-tips-to-pass-ckad-certified-kubernetes-application-developer-exam-433499086f3b
+
+- https://kubernetes.io/docs/tasks/manage-kubernetes-objects/imperative-config/
+- https://kubernetes.io/docs/tasks/manage-kubernetes-objects/declarative-config/
+- https://kubernetes.io/docs/concepts/overview/working-with-objects/object-management/
+
+- https://github.com/jetstack/kubernetes.github.io/blob/master/docs/concepts/configuration/secret.md
+- https://kubernetes.io/docs/concepts/configuration/secret/
+- https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/
